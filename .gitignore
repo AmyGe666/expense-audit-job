@@ -1,0 +1,35 @@
+# 忽略 Python 缓存
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# 虚拟环境
+venv/
+env/
+ENV/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# 环境变量文件
+.env
+.env.local
+
+# Docker
+.dockerignore
+
+# 日志
+*.log
+
+# 测试覆盖率
+htmlcov/
+.coverage
+.pytest_cache/
+
+# 操作系统
+.DS_Store
+Thumbs.db

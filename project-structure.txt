@@ -1,0 +1,30 @@
+expense-audit-job/
+│
+├── 📁 app/                        # 应用程序代码
+│   ├── 🐍 main.py                # Job 主入口 (254 行)
+│   ├── 🗄️  hana.py                # HANA 连接器 (150 行)
+│   ├── 📊 audit.py               # 审计逻辑 (115 行)
+│   └── 📦 requirements.txt       # Python 依赖
+│
+├── 🐳 Dockerfile                 # Docker 镜像定义
+├── ⚙️  ai-core.yaml              # AI Core 配置
+│
+├── 🚀 deploy.sh                  # 快速部署脚本
+├── 🔧 aicore-cli.sh             # AI Core CLI 工具
+├── 🧪 test_local.py             # 本地测试脚本
+├── 💾 setup_hana.sql            # HANA 初始化脚本
+│
+├── 📖 README.md                  # 项目主文档
+├── 📘 DEPLOYMENT.md              # 部署指南
+├── 📗 OVERVIEW.md                # 项目概览
+├── 📙 QUICKREF.md                # 快速参考
+├── 📋 CHECKLIST.md               # 检查清单
+├── 📝 PROJECT_SUMMARY.md         # 项目总结
+│
+└── 🙈 .gitignore                 # Git 忽略配置
+
+总计: 18 个文件
+代码: 4 个 Python 文件 + 1 个 SQL 文件
+脚本: 2 个 Shell 脚本 + 1 个测试脚本
+配置: 2 个配置文件
+文档: 6 个 Markdown 文件

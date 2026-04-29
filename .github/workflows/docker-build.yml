@@ -1,0 +1,82 @@
+name: Build and Push Docker Image
+
+on:
+  push:
+    branches:
+      - main
+      - master
+    paths:
+      - 'app/**'
+      - 'Dockerfile'
+      - '.github/workflows/docker-build.yml'
+  workflow_dispatch:  # 允许手动触发
+
+env:
+  IMAGE_NAME: expense-audit-job
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v3
+
+      - name: 🔐 Login to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: 📝 Generate image metadata
+        id: meta
+        run: |
+          # 生成镜像标签
+          TIMESTAMP=$(date +%Y%m%d-%H%M%S)
+          SHORT_SHA=$(echo ${{ github.sha }} | cut -c1-7)
+
+          echo "IMAGE_TAG=1.0.0" >> $GITHUB_OUTPUT
+          echo "FULL_TAG=${{ secrets.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:1.0.0" >> $GITHUB_OUTPUT
+          echo "LATEST_TAG=${{ secrets.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:latest" >> $GITHUB_OUTPUT
+
+      - name: 🐳 Build Docker image
+        run: |
+          docker build \
+            -t ${{ steps.meta.outputs.FULL_TAG }} \
+            -t ${{ steps.meta.outputs.LATEST_TAG }} \
+            .
+
+      - name: 📤 Push Docker image
+        run: |
+          docker push ${{ steps.meta.outputs.FULL_TAG }}
+          docker push ${{ steps.meta.outputs.LATEST_TAG }}
+
+      - name: 📝 Update ai-core.yaml
+        run: |
+          sed -i "s|image:.*|image: ${{ steps.meta.outputs.FULL_TAG }}|g" ai-core.yaml
+          echo "✓ ai-core.yaml updated with image: ${{ steps.meta.outputs.FULL_TAG }}"
+
+      - name: 💾 Commit updated ai-core.yaml
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git add ai-core.yaml
+          git diff --staged --quiet || git commit -m "chore: update Docker image in ai-core.yaml [skip ci]"
+          git push
+
+      - name: ✅ Summary
+        run: |
+          echo "╔════════════════════════════════════════════════════════╗"
+          echo "║              ✓ Build and Push Completed               ║"
+          echo "╚════════════════════════════════════════════════════════╝"
+          echo ""
+          echo "📦 Docker Image:"
+          echo "   ${{ steps.meta.outputs.FULL_TAG }}"
+          echo ""
+          echo "🔗 View on Docker Hub:"
+          echo "   https://hub.docker.com/r/${{ secrets.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}"
+          echo ""
+          echo "📋 Next Steps:"
+          echo "   1. Pull the latest ai-core.yaml from this repo"
+          echo "   2. Run: ./create-hana-secret.sh"
+          echo "   3. Run: ./aicore-cli.sh"

@@ -1,0 +1,5 @@
+# SAP HANA Database Client
+hdbcli==2.19.21
+
+# Logging and utilities
+python-dateutil==2.8.2
