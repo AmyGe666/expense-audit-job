@@ -5,8 +5,12 @@ metadata:
   annotations:
     scenarios.ai.sap.com/name: "expense-audit"
     scenarios.ai.sap.com/description: "Expense Audit Job - Workflow"
+    executables.ai.sap.com/name: "expense-audit-job"
+    executables.ai.sap.com/description: "Automated expense auditing job"
   labels:
     scenarios.ai.sap.com/id: "expense-audit"
+    executables.ai.sap.com/id: "expense-audit-job"
+    ai.sap.com/version: "1.0.0"
 
 spec:
   entrypoint: main
