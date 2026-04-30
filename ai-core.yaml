@@ -1,10 +1,12 @@
-apiVersion: argoproj.io/v1alpha1
+apiVersion: ai.sap.com/v1alpha1
 kind: WorkflowTemplate
 metadata:
   name: expense-audit-job
   annotations:
     scenarios.ai.sap.com/description: "Expense Audit Job - Automated expense audit"
-    scenarios.ai.sap.com/name: "expense-audit"
+    scenarios.ai.sap.com/name: "Expense Audit"
+    executables.ai.sap.com/description: "Automated expense auditing job"
+    executables.ai.sap.com/name: "expense-audit-job"
   labels:
     scenarios.ai.sap.com/id: "expense-audit"
     ai.sap.com/version: "1.0.0"
@@ -22,11 +24,6 @@ spec:
     metadata:
       labels:
         ai.sap.com/resourcePlan: starter
-
-    inputs:
-      parameters:
-      - name: batch-size
-        value: "{{workflow.parameters.batch-size}}"
 
     container:
       image: ghcr.io/amyge666/expense-audit-job:main
@@ -65,7 +62,7 @@ spec:
         value: "EXPENSE_SCHEMA"
 
       - name: BATCH_SIZE
-        value: "{{inputs.parameters.batch-size}}"
+        value: "{{workflow.parameters.batch-size}}"
 
       resources:
         limits:
