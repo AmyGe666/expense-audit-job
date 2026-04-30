@@ -63,7 +63,7 @@ class HANAConnector:
 
         try:
             # 从 ExpenseHeader 表读取
-            # 表名：EXPENSE_MANAGEMENT_EXPENSEHEADER
+            # Schema 是 UUID，表名是 EXPENSE_MANAGEMENT_EXPENSEHEADER
             query = f"""
                 SELECT
                     ID as EXPENSE_ID,
@@ -75,7 +75,7 @@ class HANAConnector:
                     SUBMITDATE as EXPENSE_DATE,
                     STATUS,
                     CREATEDAT as CREATED_AT
-                FROM "{self.schema}_EXPENSEHEADER"
+                FROM "{self.schema}"."EXPENSE_MANAGEMENT_EXPENSEHEADER"
                 WHERE STATUS = ?
                 ORDER BY CREATEDAT ASC
                 LIMIT 100
@@ -134,7 +134,7 @@ class HANAConnector:
             new_status = 'Rejected' if risk_score >= 70 else 'Audited'
 
             update_query = f"""
-                UPDATE "{self.schema}_EXPENSEHEADER"
+                UPDATE "{self.schema}"."EXPENSE_MANAGEMENT_EXPENSEHEADER"
                 SET
                     STATUS = ?,
                     MODIFIEDAT = CURRENT_TIMESTAMP
