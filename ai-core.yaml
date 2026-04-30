@@ -26,9 +26,8 @@ spec:
 
     # 容器配置
     container:
-      # 替换为你的 Docker 镜像地址
-      # 格式：<docker-registry-url>/<your-image-name>:<tag>
-      image: docker.io/your-registry/expense-audit-job:latest
+      # GitHub Container Registry 镜像地址
+      image: ghcr.io/amyge666/expense-audit-job:main
       imagePullPolicy: Always
 
       # 启动命令（默认使用 Dockerfile 中的 CMD）
