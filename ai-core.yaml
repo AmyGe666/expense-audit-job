@@ -1,9 +1,9 @@
-apiVersion: ai.sap.com/v1alpha1
+apiVersion: argoproj.io/v1alpha1
 kind: WorkflowTemplate
 metadata:
   name: expense-audit-job
   annotations:
-    scenarios.ai.sap.com/description: "Expense Audit Job - Automated expense審計"
+    scenarios.ai.sap.com/description: "Expense Audit Job - Automated expense audit"
     scenarios.ai.sap.com/name: "expense-audit"
   labels:
     scenarios.ai.sap.com/id: "expense-audit"
