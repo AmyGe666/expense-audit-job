@@ -1,32 +1,37 @@
-apiVersion: ai.sap.com/v1alpha1
+apiVersion: argoproj.io/v1alpha1
 kind: WorkflowTemplate
 metadata:
   name: expense-audit-job
   annotations:
-    scenarios.ai.sap.com/name: "expense-audit"
-    scenarios.ai.sap.com/description: "Expense Audit Job - Workflow"
-    executables.ai.sap.com/name: "expense-audit-job"
+    scenarios.ai.sap.com/description: "Expense Audit Job - Automated expense audit"
+    scenarios.ai.sap.com/name: "Expense Audit"
     executables.ai.sap.com/description: "Automated expense auditing job"
+    executables.ai.sap.com/name: "expense-audit-job"
   labels:
     scenarios.ai.sap.com/id: "expense-audit"
     executables.ai.sap.com/id: "expense-audit-job"
     ai.sap.com/version: "1.0.0"
 
 spec:
-  entrypoint: main
+  imagePullSecrets: []
+  entrypoint: expense-audit-main
 
   templates:
-  - name: main
+  - name: expense-audit-main
     metadata:
       labels:
         ai.sap.com/resourcePlan: starter
 
     container:
       image: ghcr.io/amyge666/expense-audit-job:main
-      command:
-        - python
+      imagePullPolicy: Always
+      command: ["/bin/sh", "-c"]
       args:
-        - main.py
+        - >
+          set -e &&
+          echo "---Start Expense Audit---" &&
+          python main.py &&
+          echo "---End Expense Audit---"
 
       env:
       - name: HANA_HOST
