@@ -1,0 +1,40 @@
+# AI Core Configuration
+.aicore.config
+*.config
+
+# Shell scripts with credentials
+create-hana-secret.sh
+delete_secret.sh
+aicore-cli.sh
+deploy.sh
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+*.egg-info/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Environment variables
+.env
+.env.local
+
+# Temporary files
+*.tmp
+.last_execution_id
