@@ -8,6 +8,13 @@ delete_secret.sh
 aicore-cli.sh
 deploy.sh
 
+# Documentation with sensitive examples
+guide/
+
+# Test scripts with potential credentials
+check_hana_structure.py
+test_local.py
+
 # Python
 __pycache__/
 *.py[cod]
