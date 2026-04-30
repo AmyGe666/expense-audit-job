@@ -23,7 +23,7 @@ spec:
         ai.sap.com/resourcePlan: starter
 
     container:
-      image: ghcr.io/amyge666/expense-audit-job:sha-430869d
+      image: ghcr.io/amyge666/expense-audit-job:main
       imagePullPolicy: Always
       command: ["/bin/sh", "-c"]
       args:
@@ -59,4 +59,7 @@ spec:
             key: password
 
       - name: HANA_SCHEMA
-        value: "EXPENSE_SCHEMA"
+        valueFrom:
+          secretKeyRef:
+            name: hana-credentials
+            key: schema

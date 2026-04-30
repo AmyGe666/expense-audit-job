@@ -22,7 +22,7 @@ class HANAConnector:
             port: 端口号（通常为 443）
             user: 用户名
             password: 密码
-            schema: Schema 名称 (EXPENSE_MANAGEMENT)
+            schema: Schema 名称 (UUID)
         """
         self.host = host
         self.port = port
@@ -30,6 +30,10 @@ class HANAConnector:
         self.password = password
         self.schema = schema
         self.connection = None
+
+        # 调试日志
+        logger.info(f"Initializing HANA connection with schema: {self.schema}")
+
         self._connect()
 
     def _connect(self):
@@ -82,6 +86,9 @@ class HANAConnector:
             """
 
             logger.info(f"Querying expenses with status: {status}")
+            logger.info(f"Using schema: {self.schema}")
+            logger.info(f"Full table name: {self.schema}.EXPENSE_MANAGEMENT_EXPENSEHEADER")
+
             cursor.execute(query, (status,))
 
             # 获取列名
