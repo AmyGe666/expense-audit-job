@@ -33,3 +33,9 @@ htmlcov/
 # 操作系统
 .DS_Store
 Thumbs.db
+
+# Shell 脚本
+*.sh
+
+# 指南文件夹
+guide/
