@@ -23,7 +23,7 @@ spec:
         ai.sap.com/resourcePlan: starter
 
     container:
-      image: ghcr.io/amyge666/expense-audit-job:main
+      image: ghcr.io/amyge666/expense-audit-job:sha-430869d
       imagePullPolicy: Always
       command: ["/bin/sh", "-c"]
       args:
