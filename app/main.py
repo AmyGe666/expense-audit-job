@@ -20,6 +20,14 @@ def main():
     try:
         logger.info("=== Expense Audit Job Started ===")
 
+        # 0. Log environment variables (for debugging)
+        logger.info("Environment configuration:")
+        logger.info(f"  HANA_HOST: {os.environ.get('HANA_HOST', 'NOT SET')}")
+        logger.info(f"  HANA_PORT: {os.environ.get('HANA_PORT', '443')}")
+        logger.info(f"  HANA_USER: {os.environ.get('HANA_USER', 'NOT SET')[:30]}...")
+        logger.info(f"  HANA_PASSWORD: {'***SET***' if os.environ.get('HANA_PASSWORD') else 'NOT SET'}")
+        logger.info(f"  BATCH_SIZE: {os.environ.get('BATCH_SIZE', 'NOT SET')}")
+
         # 1. Initialize HANA connection (no schema parameter needed!)
         logger.info("Connecting to SAP HANA...")
         hana = HanaClient(

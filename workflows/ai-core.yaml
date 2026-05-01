@@ -61,8 +61,8 @@ spec:
             name: hana-credentials
             key: password
 
-      - name: HANA_SCHEMA
-        value: "EXPENSE_SCHEMA"
+      # HANA_SCHEMA removed - HDI user's CURRENT_SCHEMA is used automatically
+      # The technical user's default schema is determined by the HDI container
 
       - name: BATCH_SIZE
         value: "{{inputs.parameters.batch-size}}"
