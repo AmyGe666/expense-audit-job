@@ -57,9 +57,3 @@ spec:
           secretKeyRef:
             name: hana-credentials
             key: password
-
-      - name: HANA_SCHEMA
-        valueFrom:
-          secretKeyRef:
-            name: hana-credentials
-            key: schema

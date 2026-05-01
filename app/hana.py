@@ -1,43 +1,46 @@
 """
-SAP HANA Database Connector - 适配 Expense Management POC
-只读取数据，不写入审计结果
+SAP HANA client for AI Core Job.
+Designed for HANA Cloud with HDI technical user.
 """
 import logging
-from typing import List, Dict, Any
-from datetime import datetime
+from typing import List, Dict, Any, Optional
+
 from hdbcli import dbapi
 
 logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
 
 
-class HANAConnector:
-    """SAP HANA 数据库连接器 - 适配版"""
+class HanaClient:
+    """
+    SAP HANA client for AI Core Job.
+    Designed for HANA Cloud with HDI technical user.
+    """
 
-    def __init__(self, host: str, port: int, user: str, password: str, schema: str):
+    def __init__(self, host: str, port: int, user: str, password: str):
         """
-        初始化 HANA 连接
+        Initialize HANA connection.
 
         Args:
-            host: HANA 主机地址
-            port: 端口号（通常为 443）
-            user: 用户名
-            password: 密码
-            schema: Schema 名称 (UUID)
+            host: HANA host (e.g. *.hanacloud.ondemand.com)
+            port: HANA port (usually 443)
+            user: HANA technical user (HDI)
+            password: Password
         """
         self.host = host
         self.port = port
         self.user = user
         self.password = password
-        self.schema = schema
-        self.connection = None
-
-        # 调试日志
-        logger.info(f"Initializing HANA connection with schema: {self.schema}")
+        self.connection: Optional[dbapi.Connection] = None
 
         self._connect()
 
-    def _connect(self):
-        """建立数据库连接"""
+    # ---------------------------------------------------------------------
+    # Connection handling
+    # ---------------------------------------------------------------------
+
+    def _connect(self) -> None:
+        """Establish HANA connection."""
         try:
             self.connection = dbapi.connect(
                 address=self.host,
@@ -45,127 +48,150 @@ class HANAConnector:
                 user=self.user,
                 password=self.password,
                 encrypt=True,
-                sslValidateCertificate=False
+                sslValidateCertificate=False,
             )
-            logger.info(f"Successfully connected to HANA at {self.host}")
-        except Exception as e:
-            logger.error(f"Failed to connect to HANA: {str(e)}")
-            raise
+
+            logger.info("Successfully connected to SAP HANA")
+
+            # Debug aid: log current schema (HDI)
+            with self.connection.cursor() as cursor:
+                cursor.execute("SELECT CURRENT_SCHEMA FROM DUMMY")
+                current_schema = cursor.fetchone()[0]
+                logger.info(f"Current HANA schema: {current_schema}")
+
+        except Exception as exc:
+            logger.exception("Failed to connect to SAP HANA")
+            raise RuntimeError("HANA connection failed") from exc
+
+    def close(self) -> None:
+        """Close HANA connection."""
+        if self.connection:
+            try:
+                self.connection.close()
+                logger.info("HANA connection closed")
+            except Exception:
+                logger.warning("Error while closing HANA connection")
+
+    # ---------------------------------------------------------------------
+    # Query helpers
+    # ---------------------------------------------------------------------
 
     def get_expenses_by_status(self, status: str) -> List[Dict[str, Any]]:
         """
-        根据状态获取费用记录
-        从 EXPENSE_MANAGEMENT_EXPENSEHEADER 表读取
+        Fetch expenses from EXPENSE_MANAGEMENT_EXPENSEHEADER by status.
 
         Args:
-            status: 费用状态（'Submitted' - 待审计）
+            status: Expense status (e.g. 'Submitted')
 
         Returns:
-            费用记录列表
+            List of expense records as dicts
         """
-        cursor = self.connection.cursor()
+        query = """
+            SELECT
+                ID          AS EXPENSE_ID,
+                EXPENSEID   AS BUSINESS_EXPENSE_ID,
+                TOTALAMOUNT,
+                CURRENCY,
+                SUBMITDATE  AS EXPENSE_DATE,
+                STATUS,
+                CREATEDAT  AS CREATED_AT
+            FROM "EXPENSE_MANAGEMENT_EXPENSEHEADER"
+            WHERE STATUS = ?
+            ORDER BY CREATEDAT ASC
+        """
+
+        logger.info(f"Querying expenses with status='{status}'")
 
         try:
-            # 从 ExpenseHeader 表读取
-            # Schema 是 UUID，表名是 EXPENSE_MANAGEMENT_EXPENSEHEADER
-            query = f"""
-                SELECT
-                    ID as EXPENSE_ID,
-                    EXPENSEID as EXPENSE_REF,
-                    EMPLOYEE_ID,
-                    EXPENSETYPE as EXPENSE_TYPE,
-                    TOTALAMOUNT as AMOUNT,
-                    CURRENCY,
-                    SUBMITDATE as EXPENSE_DATE,
-                    STATUS,
-                    CREATEDAT as CREATED_AT
-                FROM "{self.schema}"."EXPENSE_MANAGEMENT_EXPENSEHEADER"
-                WHERE STATUS = ?
-                ORDER BY CREATEDAT ASC
-                LIMIT 100
-            """
+            with self.connection.cursor() as cursor:
+                cursor.execute(query, (status,))
+                rows = cursor.fetchall()
 
-            logger.info(f"Querying expenses with status: {status}")
-            logger.info(f"Using schema: {self.schema}")
-            logger.info(f"Full table name: {self.schema}.EXPENSE_MANAGEMENT_EXPENSEHEADER")
+                columns = [col[0] for col in cursor.description]
+                result = [dict(zip(columns, row)) for row in rows]
 
-            cursor.execute(query, (status,))
+                logger.info(f"Fetched {len(result)} expense(s)")
+                return result
 
-            # 获取列名
-            columns = [desc[0] for desc in cursor.description]
+        except Exception as exc:
+            logger.exception("Failed to query expenses")
+            raise RuntimeError("Expense query failed") from exc
 
-            # 转换为字典列表
-            results = []
-            for row in cursor.fetchall():
-                expense = dict(zip(columns, row))
-                # 添加模拟字段（审计逻辑需要）
-                expense['DESCRIPTION'] = f"Expense {expense['EXPENSE_REF']}"
-                expense['RECEIPT_URL'] = None  # 模拟无发票
-                results.append(expense)
-
-            logger.info(f"Found {len(results)} expenses with status {status}")
-            return results
-
-        except Exception as e:
-            logger.error(f"Failed to query expenses: {str(e)}")
-            raise
-
-        finally:
-            cursor.close()
-
-    def update_expense_audit_result(
+    def update_expense_status(
         self,
         expense_id: str,
-        status: str,
-        risk_score: float,
-        audit_notes: str,
-        audited_at: datetime
-    ):
+        new_status: str
+    ) -> None:
         """
-        更新费用审计结果 - 简化版
-        只更新 STATUS 字段
+        Update expense status.
 
         Args:
-            expense_id: 费用 ID (UUID)
-            status: 审计后的状态（'Audited' 或 'Rejected'）
-            risk_score: 风险评分（0-100）
-            audit_notes: 审计备注
-            audited_at: 审计时间
+            expense_id: Expense ID (UUID)
+            new_status: New status (e.g. 'Audited', 'Rejected')
         """
-        cursor = self.connection.cursor()
+        query = """
+            UPDATE "EXPENSE_MANAGEMENT_EXPENSEHEADER"
+            SET
+                STATUS = ?,
+                MODIFIEDAT = CURRENT_UTCTIMESTAMP
+            WHERE ID = ?
+        """
 
         try:
-            # 简化版：只更新状态
-            # 如果风险评分 >= 70，状态改为 Rejected
-            # 否则改为 Audited
-            new_status = 'Rejected' if risk_score >= 70 else 'Audited'
+            with self.connection.cursor() as cursor:
+                cursor.execute(query, (new_status, expense_id))
+                self.connection.commit()
 
-            update_query = f"""
-                UPDATE "{self.schema}"."EXPENSE_MANAGEMENT_EXPENSEHEADER"
-                SET
-                    STATUS = ?,
-                    MODIFIEDAT = CURRENT_TIMESTAMP
-                WHERE ID = ?
-            """
+            logger.info(f"Updated expense {expense_id}: status={new_status}")
 
-            cursor.execute(update_query, (new_status, expense_id))
-            self.connection.commit()
+        except Exception as exc:
+            if self.connection:
+                self.connection.rollback()
+            logger.exception("Failed to update expense status")
+            raise RuntimeError("Update expense failed") from exc
 
-            logger.info(
-                f"Updated expense {expense_id}: "
-                f"status={new_status}, risk_score={risk_score:.2f}"
+    # ---------------------------------------------------------------------
+    # Example: insert/update results
+    # ---------------------------------------------------------------------
+
+    def insert_signal_result(self, data: Dict[str, Any]) -> None:
+        """
+        Example method to insert a heuristic signal result.
+
+        Args:
+            data: Dict containing signal result fields
+        """
+        query = """
+            INSERT INTO "EXPENSE_MANAGEMENT_HEURISTICSIGNALRESULT"
+            (
+                ID,
+                SIGNALCODE,
+                SIGNALLEVEL,
+                DETECTEDVALUE,
+                EXPLANATION,
+                DETECTEDAT
             )
+            VALUES (?, ?, ?, ?, ?, CURRENT_UTCTIMESTAMP)
+        """
 
-        except Exception as e:
-            self.connection.rollback()
-            logger.error(f"Failed to update expense {expense_id}: {str(e)}")
-            raise
+        try:
+            with self.connection.cursor() as cursor:
+                cursor.execute(
+                    query,
+                    (
+                        data["id"],
+                        data["signal_code"],
+                        data["signal_level"],
+                        data.get("detected_value"),
+                        data.get("explanation"),
+                    ),
+                )
+                self.connection.commit()
 
-        finally:
-            cursor.close()
+            logger.info("Heuristic signal result inserted")
 
-    def close(self):
-        """关闭数据库连接"""
-        if self.connection:
-            self.connection.close()
-            logger.info("HANA connection closed")
+        except Exception as exc:
+            if self.connection:
+                self.connection.rollback()
+            logger.exception("Failed to insert signal result")
+            raise RuntimeError("Insert signal result failed") from exc
